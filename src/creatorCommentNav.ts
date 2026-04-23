@@ -22,13 +22,13 @@ const XPATH_UNREPLIED_OPTION =
   process.env.DOUYIN_XPATH_UNREPLIED ??
   '/html/body/div[6]/div/div/div/div/div/div/div/div[2]'
 
-/** 列表最上方一条的「回复」入口 */
-const XPATH_FIRST_COMMENT_REPLY =
+/** 列表最上方一条的「回复」入口（导出供 Coze 上下文抓取复用） */
+export const XPATH_FIRST_COMMENT_REPLY =
   process.env.DOUYIN_XPATH_FIRST_COMMENT_REPLY ??
   '/html/body/div[1]/div[1]/div/div[3]/div/div/div/div[2]/div/div[4]/div[2]/div/div/div/div[5]/div[1]/div/div/div[4]/div/div[3]'
 
 /** 评论回复面板内真实输入区域（div，常为 contenteditable） */
-const XPATH_COMMENT_COMPOSER =
+export const XPATH_COMMENT_COMPOSER =
   process.env.DOUYIN_XPATH_COMMENT_COMPOSER ??
   '/html/body/div[1]/div[1]/div/div[3]/div/div/div/div[2]/div/div[4]/div[2]/div/div/div/div[5]/div[1]/div/div/div[4]/div[2]/div/div[1]/div'
 

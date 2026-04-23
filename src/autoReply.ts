@@ -1,6 +1,11 @@
 import './config'
 import { config } from './config'
 import {
+  extractCommentUserText,
+  extractPrivateMessageUserText,
+  printCozePreviewBox,
+} from './cozeContextPreview'
+import {
   openUnrepliedCommentReplyFlow,
   trySendCommentReplyViaXPath,
 } from './creatorCommentNav'
@@ -193,7 +198,6 @@ async function main(): Promise<void> {
   process.on('SIGTERM', onStop)
 
   while (!stop) {
-    const text = await resolveReplyText({})
     let sent = false
 
     if (inboxNavOk) {
@@ -203,6 +207,16 @@ async function main(): Promise<void> {
           `[${new Date().toISOString()}] [节流] 已打开未读会话，等待 ${config.delayBeforeComposeMs} ms 后再输入`,
         )
         await sleep(config.delayBeforeComposeMs)
+        const dmPreview = await extractPrivateMessageUserText(page)
+        printCozePreviewBox(
+          'Coze 预留 · 未读私信（拟作为 user 消息发送）',
+          dmPreview ||
+            '（未能自动抓取正文；可在 .env 配置 DOUYIN_XPATH_DM_USER_MESSAGE 精确定位）',
+        )
+        const text = await resolveReplyText({
+          userText: dmPreview || undefined,
+          source: 'private_dm',
+        })
         sent = await trySendReply(page, text)
         console.log(
           `[${new Date().toISOString()}] [私信] 策略回复: ${JSON.stringify(text)} 尝试发送: ${sent ? '已在某一 frame 内完成点击发送' : '失败，已输出 DOM 调试片段'}`,
@@ -225,6 +239,16 @@ async function main(): Promise<void> {
             `[${new Date().toISOString()}] [节流] 已打开评论回复区，等待 ${config.delayBeforeComposeMs} ms 后再输入`,
           )
           await sleep(config.delayBeforeComposeMs)
+          const commentPreview = await extractCommentUserText(page)
+          printCozePreviewBox(
+            'Coze 预留 · 未回复评论（拟作为 user 消息发送）',
+            commentPreview ||
+              '（未能自动抓取正文；可在 .env 配置 DOUYIN_XPATH_COMMENT_USER_TEXT 精确定位）',
+          )
+          const text = await resolveReplyText({
+            userText: commentPreview || undefined,
+            source: 'comment',
+          })
           sent = await trySendCommentReplyViaXPath(page, text)
           console.log(
             `[${new Date().toISOString()}] [评论] 策略回复: ${JSON.stringify(text)} XPath 发送: ${sent ? '成功' : '失败'}`,
@@ -251,6 +275,7 @@ async function main(): Promise<void> {
         }
       }
     } else {
+      const text = await resolveReplyText({ source: 'private_dm' })
       sent = await trySendReply(page, text)
       console.log(
         `[${new Date().toISOString()}] 策略回复: ${JSON.stringify(text)} 尝试发送: ${sent ? '已在某一 frame 内完成点击发送' : '失败，已输出 DOM 调试片段'}`,

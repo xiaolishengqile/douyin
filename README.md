@@ -81,6 +81,7 @@ douyin/
 │   ├── autoReply.ts         # 主入口：私信 / 评论 / 发送 / 节流
 │   ├── config.ts            # 环境变量与默认节流参数
 │   ├── replyPolicy.ts       # 回复文案策略（当前固定返回 "1"）
+│   ├── cozeContextPreview.ts # 未读私信/评论正文预览（终端输出，供后续 Coze）
 │   ├── persistentChromium.ts # 启动带 Stealth 的持久化 Chromium
 │   ├── creatorXpathHelpers.ts # 跨 frame 的 XPath / 文本点击工具
 │   ├── creatorPrivateMessageNav.ts # 互动管理、私信管理、未读红点、回私信侧栏
@@ -133,6 +134,9 @@ A：增大 `DOUYIN_COOLDOWN_BEFORE_COMMENT_MS`、`DOUYIN_DELAY_BEFORE_COMPOSE_MS
 
 **Q：想改成智能回复而不是固定 `1`**  
 A：改 **`src/replyPolicy.ts`** 中 `resolveReplyText`；后续在此接入 Coze API 即可，主流程无需大改。
+
+**Q：终端里「Coze 预留」框是什么**  
+A：运行 `npm run auto-reply` 时，会在尝试回复前把**抓取到的用户侧文案预览**打印出来（私信 / 评论各一套启发式，可用 `DOUYIN_XPATH_DM_USER_MESSAGE`、`DOUYIN_XPATH_COMMENT_USER_TEXT` 配准）。接入 Coze 时把该字符串作为 user 消息即可；逻辑见 **`src/cozeContextPreview.ts`**。
 
 ---
 
