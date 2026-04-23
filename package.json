@@ -1,0 +1,27 @@
+{
+  "name": "douyin",
+  "version": "1.0.0",
+  "description": "抖音创作服务平台自动化（Playwright）",
+  "main": "index.js",
+  "scripts": {
+    "login": "tsx src/login.ts",
+    "auto-reply": "tsx src/autoReply.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "playwright": "^1.59.1",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}

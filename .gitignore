@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+*.log
+
+# 浏览器用户数据（含 Cookie，勿提交）；保留空目录占位
+data/user_data/*
+!data/user_data/.gitkeep
