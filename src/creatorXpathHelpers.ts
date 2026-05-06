@@ -11,6 +11,7 @@ export async function clickXPathInAnyFrame(
   xpath: string,
   label: string,
 ): Promise<boolean> {
+  if (!xpath.trim()) return false
   const xp = `xpath=${xpath}`
   for (const frame of page.frames()) {
     const loc = frame.locator(xp)

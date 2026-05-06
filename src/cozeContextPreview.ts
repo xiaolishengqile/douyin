@@ -24,35 +24,106 @@ export function printCozePreviewBox(title: string, body: string): void {
 }
 
 /**
- * 抓取拟发给 Coze 的私信侧「用户原文」预览（启发式 + 可选 XPath）。
+ * 抓取拟发给 Coze 的私信上下文（区分「对方/我方」）。
+ * 优先输出最近多条会话，形如：
+ * 对方: xxx
+ * 我方: yyy
  */
 export async function extractPrivateMessageUserText(page: Page): Promise<string> {
   if (XPATH_DM_USER_MESSAGE) {
     const xp = `xpath=${XPATH_DM_USER_MESSAGE}`
     for (const frame of page.frames()) {
-      const loc = frame.locator(xp).first()
-      if ((await loc.count()) === 0) continue
-      const t = await loc.innerText().catch(() => '')
-      if (t?.trim()) return clip(t, 4000)
+      const loc = frame.locator(xp)
+      const count = await loc.count()
+      if (count === 0) continue
+      const tryCount = Math.min(count, 6)
+      for (let i = 0; i < tryCount; i++) {
+        const structured = await loc
+          .nth(i)
+          .evaluate((root) => {
+            const clean = (s: string): string => s.replace(/\s+/g, ' ').trim()
+            const isTime = (s: string): boolean => /^\d{1,2}:\d{2}$/.test(s.trim())
+            const msgSelector =
+              'pre[class*="text-item-message"], div[class*="box-item-message"] pre, [class*="text-item-message"]'
+            let rawRows: HTMLElement[] = []
+            try {
+              rawRows = Array.from(
+                (root as Element).querySelectorAll(':scope > div[class*="box-item-"]'),
+              ) as HTMLElement[]
+            } catch {
+              rawRows = []
+            }
+            const rows = (rawRows.length
+              ? rawRows
+              : (Array.from(
+                  root.querySelectorAll('div[class*="box-item-"]'),
+                ) as HTMLElement[]
+              ).filter((el) => {
+                const cls = el.className || ''
+                if (!cls.includes('box-item-')) return false
+                if (cls.includes('box-item-message-')) return false
+                return cls.includes('time-') || el.querySelector('[class*="box-item-message"]') !== null
+              }))
+              .map((box) => {
+                const cls = box.className || ''
+                if (/time-/i.test(cls)) return ''
+                const isMe = /\bis-me\b/i.test(cls) || /is-me-/i.test(cls)
+                const msgNode = box.querySelector(msgSelector) as HTMLElement | null
+                const msg = clean(msgNode?.innerText || '')
+                if (!msg || isTime(msg)) return ''
+                return `${isMe ? '我方' : '对方'}：${msg}`
+              })
+              .filter((v): v is string => !!v)
+            if (!rows.length) return ''
+            const deduped: string[] = []
+            for (const row of rows) {
+              if (deduped[deduped.length - 1] === row) continue
+              deduped.push(row)
+            }
+            return deduped.slice(-12).join('\n')
+          })
+          .catch(() => '')
+        if (structured) return clip(structured, 4000)
+      }
     }
   }
 
   for (const frame of page.frames()) {
-    const composer = frame.locator('textarea, div[contenteditable="true"]').first()
-    if ((await composer.count()) === 0) continue
-    const panel = await composer
-      .first()
-      .evaluate((el) => {
-        let cur: HTMLElement | null = el as HTMLElement
-        for (let depth = 0; depth < 16 && cur; depth++) {
-          const raw = cur.innerText?.trim() || ''
-          if (raw.length > 24) return raw
-          cur = cur.parentElement
+    const conversation = await frame
+      .evaluate(() => {
+        const clean = (s: string): string => s.replace(/\s+/g, ' ').trim()
+        const isTime = (s: string): boolean => /^\d{1,2}:\d{2}$/.test(s.trim())
+        const rows = (Array.from(
+          document.querySelectorAll('div[class*="box-item-"]'),
+        ) as HTMLElement[])
+          .filter((el) => {
+            const cls = el.className || ''
+            if (!cls.includes('box-item-')) return false
+            if (cls.includes('box-item-message-')) return false
+            return cls.includes('time-') || el.querySelector('[class*="box-item-message-"]') !== null
+          })
+          .map((box) => {
+            const cls = box.className || ''
+            if (/time-/i.test(cls)) return ''
+            const isMe = /\bis-me\b/i.test(cls) || /is-me-/i.test(cls)
+            const msgNode = box.querySelector(
+              'pre[class*="text-item-message"], div[class*="box-item-message"] pre, [class*="text-item-message"]',
+            ) as HTMLElement | null
+            const msg = clean(msgNode?.innerText || '')
+            if (!msg || isTime(msg)) return ''
+            return `${isMe ? '我方' : '对方'}：${msg}`
+          })
+          .filter((v): v is string => !!v)
+        if (!rows.length) return ''
+        const deduped: string[] = []
+        for (const row of rows) {
+          if (deduped[deduped.length - 1] === row) continue
+          deduped.push(row)
         }
-        return ''
+        return deduped.slice(-12).join('\n')
       })
       .catch(() => '')
-    if (panel) return clip(panel, 4000)
+    if (conversation) return clip(conversation, 4000)
   }
 
   return ''

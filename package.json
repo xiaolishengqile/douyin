@@ -6,6 +6,7 @@
   "scripts": {
     "login": "tsx src/login.ts",
     "auto-reply": "tsx src/autoReply.ts",
+    "debug-dm": "tsx src/debugDmExtract.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@coze/api": "^1.3.9",
     "dotenv": "^17.4.2",
     "playwright": "^1.59.1",
     "playwright-extra": "^4.3.6",

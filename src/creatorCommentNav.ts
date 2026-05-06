@@ -7,35 +7,52 @@ import {
   sleep,
 } from './creatorXpathHelpers'
 
+function envOrDefault(name: string, fallback: string): string {
+  const raw = process.env[name]
+  return raw && raw.trim() ? raw.trim() : fallback
+}
+
 /** 侧栏「互动管理」下 — 评论管理 */
 const XPATH_COMMENT_MENU =
-  process.env.DOUYIN_XPATH_COMMENT ??
-  '/html/body/div[1]/div[1]/aside/div/div/div/div/div[2]/ul/li[4]/div[2]/div/ul/li[3]/span'
+  envOrDefault(
+    'DOUYIN_XPATH_COMMENT',
+    '/html/body/div[1]/div[1]/aside/div/div/div/div/div[2]/ul/li[4]/div[2]/div/ul/li[3]/span',
+  )
 
 /** 筛选条「全部评论」下拉触发器 */
 const XPATH_ALL_COMMENTS_FILTER =
-  process.env.DOUYIN_XPATH_ALL_COMMENTS ??
-  '/html/body/div[1]/div[1]/div/div[3]/div/div/div/div[2]/div/div[4]/div[2]/div/div/div/div[4]/div[1]/div[1]/div[1]/div/span'
+  envOrDefault(
+    'DOUYIN_XPATH_ALL_COMMENTS',
+    '/html/body/div[1]/div[1]/div/div[3]/div/div/div/div[2]/div/div[4]/div[2]/div/div/div/div[4]/div[1]/div[1]/div[1]/div/span',
+  )
 
 /** 下拉项「未回复」（常挂在 body 顶层 portal） */
 const XPATH_UNREPLIED_OPTION =
-  process.env.DOUYIN_XPATH_UNREPLIED ??
-  '/html/body/div[6]/div/div/div/div/div/div/div/div[2]'
+  envOrDefault(
+    'DOUYIN_XPATH_UNREPLIED',
+    '/html/body/div[6]/div/div/div/div/div/div/div/div[2]',
+  )
 
 /** 列表最上方一条的「回复」入口（导出供 Coze 上下文抓取复用） */
 export const XPATH_FIRST_COMMENT_REPLY =
-  process.env.DOUYIN_XPATH_FIRST_COMMENT_REPLY ??
-  '/html/body/div[1]/div[1]/div/div[3]/div/div/div/div[2]/div/div[4]/div[2]/div/div/div/div[5]/div[1]/div/div/div[4]/div/div[3]'
+  envOrDefault(
+    'DOUYIN_XPATH_FIRST_COMMENT_REPLY',
+    '/html/body/div[1]/div[1]/div/div[3]/div/div/div/div[2]/div/div[4]/div[2]/div/div/div/div[5]/div[1]/div/div/div[4]/div/div[3]',
+  )
 
 /** 评论回复面板内真实输入区域（div，常为 contenteditable） */
 export const XPATH_COMMENT_COMPOSER =
-  process.env.DOUYIN_XPATH_COMMENT_COMPOSER ??
-  '/html/body/div[1]/div[1]/div/div[3]/div/div/div/div[2]/div/div[4]/div[2]/div/div/div/div[5]/div[1]/div/div/div[4]/div[2]/div/div[1]/div'
+  envOrDefault(
+    'DOUYIN_XPATH_COMMENT_COMPOSER',
+    '/html/body/div[1]/div[1]/div/div[3]/div/div/div/div[2]/div/div[4]/div[2]/div/div/div/div[5]/div[1]/div/div/div[4]/div[2]/div/div[1]/div',
+  )
 
 /** 评论发送：button[2] 内的 span（点击 span 即可） */
 const XPATH_COMMENT_SEND =
-  process.env.DOUYIN_XPATH_COMMENT_SEND ??
-  '/html/body/div[1]/div[1]/div/div[3]/div/div/div/div[2]/div/div[4]/div[2]/div/div/div/div[5]/div[1]/div/div/div[4]/div[2]/div/div[2]/div[2]/button[2]/span'
+  envOrDefault(
+    'DOUYIN_XPATH_COMMENT_SEND',
+    '/html/body/div[1]/div[1]/div/div[3]/div/div/div/div[2]/div/div[4]/div[2]/div/div/div/div[5]/div[1]/div/div/div[4]/div[2]/div/div[2]/div[2]/button[2]/span',
+  )
 
 /**
  * 无未读私信时的评论流程：评论管理 → 全部评论 → 未回复 → 首条「回复」。
@@ -50,7 +67,7 @@ export async function openUnrepliedCommentReplyFlow(page: Page): Promise<boolean
       console.warn('[评论导航] 无法展开互动管理，放弃评论流程')
       return false
     }
-    await sleep(config.uiStepDelayMs)
+    await sleep(config.uiStepDelayMs())
     ok = await clickXPathInAnyFrame(page, XPATH_COMMENT_MENU, '评论管理')
     if (!ok) ok = await clickExactTextInAnyFrame(page, '评论管理', '评论管理')
     if (!ok) {
@@ -59,7 +76,7 @@ export async function openUnrepliedCommentReplyFlow(page: Page): Promise<boolean
     }
   }
 
-  await sleep(Math.max(2000, config.uiStepDelayMs))
+  await sleep(Math.max(2000, config.uiStepDelayMs()))
 
   ok = await clickXPathInAnyFrame(page, XPATH_ALL_COMMENTS_FILTER, '全部评论')
   if (!ok) ok = await clickExactTextInAnyFrame(page, '全部评论', '全部评论')
@@ -68,7 +85,7 @@ export async function openUnrepliedCommentReplyFlow(page: Page): Promise<boolean
     return false
   }
 
-  await sleep(Math.max(1200, Math.floor(config.uiStepDelayMs * 0.75)))
+  await sleep(Math.max(1200, Math.floor(config.uiStepDelayMs() * 0.75)))
 
   ok = await clickXPathInAnyFrame(page, XPATH_UNREPLIED_OPTION, '未回复')
   if (!ok) ok = await clickExactTextInAnyFrame(page, '未回复', '未回复')
@@ -77,7 +94,7 @@ export async function openUnrepliedCommentReplyFlow(page: Page): Promise<boolean
     return false
   }
 
-  await sleep(Math.max(2000, config.uiStepDelayMs))
+  await sleep(Math.max(2000, config.uiStepDelayMs()))
 
   ok = await clickXPathInAnyFrame(
     page,
@@ -92,7 +109,7 @@ export async function openUnrepliedCommentReplyFlow(page: Page): Promise<boolean
     return false
   }
 
-  await sleep(Math.max(2500, config.uiStepDelayMs))
+  await sleep(Math.max(2500, config.uiStepDelayMs()))
   return true
 }
 
@@ -111,7 +128,7 @@ async function trySendCommentReplyInFrame(
     await composer.click({ timeout: 8000 })
     await composer.fill(reply)
 
-    await sleep(config.delayBetweenFillAndSendMs)
+    await sleep(config.delayBetweenFillAndSendMs())
 
     const send = frame.locator(xpSend).first()
     if ((await send.count()) === 0) return false
